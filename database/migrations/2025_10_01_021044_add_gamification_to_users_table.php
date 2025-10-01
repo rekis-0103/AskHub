@@ -6,23 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->integer('xp')->default(0);
+            $table->integer('level')->default(1);
+            $table->foreignId('title_id')->nullable()->constrained()->nullOnDelete();
+            $table->boolean('is_admin')->default(false);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn(['xp', 'level', 'title_id', 'is_admin']);
         });
     }
 };

@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('titles', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->string('description')->nullable();
+            $table->integer('required_level');
+            $table->string('color')->default('#6366f1'); // Tailwind indigo
             $table->timestamps();
         });
     }

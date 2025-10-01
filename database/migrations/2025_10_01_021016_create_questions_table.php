@@ -15,7 +15,8 @@ return new class extends Migration
             $table->text('body');
             $table->integer('votes')->default(0);
             $table->integer('views')->default(0);
-            $table->foreignId('best_answer_id')->nullable()->constrained('answers')->nullOnDelete();
+            // HAPUS foreign key dulu, akan ditambah setelah table answers dibuat
+            $table->unsignedBigInteger('best_answer_id')->nullable();
             $table->timestamps();
         });
     }

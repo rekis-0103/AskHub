@@ -2,45 +2,69 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
+use App\Models\User;
+use App\Models\Title;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
+    public function show(User $user)
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        $user->load(['title', 'questions', 'answers']);
+        
+        $stats = [
+            'questions_count' => $user->questions()->count(),
+            'answers_count' => $user->answers()->count(),
+            'best_answers_count' => $user->answers()->where('is_best', true)->count(),
+            'total_votes' => $user->questions()->sum('votes') + $user->answers()->sum('votes'),
+        ];
+
+        $availableTitles = Title::where('required_level', '<=', $user->level)->get();
+
+        return view('profile.show', compact('user', 'stats', 'availableTitles'));
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function updateTitle(Request $request)
     {
-        $request->user()->fill($request->validated());
+        $validated = $request->validate([
+            'title_id' => [
+                'nullable',
+                'exists:titles,id',
+            ],
+        ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($validated['title_id']) {
+            $title = Title::find($validated['title_id']);
+            if ($title->required_level > auth()->user()->level) {
+                return back()->with('error', 'You have not unlocked this title yet.');
+            }
         }
 
-        $request->user()->save();
+        auth()->user()->update(['title_id' => $validated['title_id']]);
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return back()->with('success', 'Title updated successfully!');
     }
 
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
+    public function edit()
+    {
+        return view('profile.edit');
+    }
+
+    public function update(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore(auth()->id())],
+        ]);
+
+        auth()->user()->update($validated);
+
+        return back()->with('success', 'Profile updated successfully!');
+    }
+
+    public function destroy(Request $request)
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
@@ -55,6 +79,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return redirect('/');
     }
 }

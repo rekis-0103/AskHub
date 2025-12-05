@@ -32,6 +32,7 @@
                 @endif
 
             </div>
+            
             <div class="flex items-center space-x-4">
                 @auth
                     @if (auth()->user()->is_admin)
@@ -82,7 +83,6 @@
                     </a>
                 @endauth
             </div>
-        </div>
         </div>
     </nav>
 

@@ -14,12 +14,11 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::get('/', [QuestionController::class, 'index'])->name('home');
 Route::get('/questions', [QuestionController::class, 'index'])->name('questions.index');
-Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
 
 // Profile public view
 Route::get('/users/{user}', [ProfileController::class, 'show'])->name('profile.show');
 
-// Authenticated routes
+// Authenticated routes (create must register before GET /questions/{question} or "create" is treated as an id)
 Route::middleware('auth')->group(function () {
     // Questions
     Route::get('/questions/create', [QuestionController::class, 'create'])->name('questions.create');
@@ -53,6 +52,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/profile/title', [ProfileController::class, 'updateTitle'])->name('profile.updateTitle');
 });
+
+Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
 
 // Admin routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

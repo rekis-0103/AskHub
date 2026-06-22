@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
 use App\Models\Answer;
+use App\Models\Question;
 use App\Models\Report;
 use Illuminate\Http\Request;
 
@@ -22,24 +22,24 @@ class ReportController extends Controller
     private function handleReport(Request $request, $reportable)
     {
         $validated = $request->validate([
+            'category' => 'required|in:spam,harassment,misinformation,duplicate,other',
             'reason' => 'required|string|min:10|max:500',
         ]);
 
-        $existing = Report::where('user_id', auth()->id())
-            ->where('reportable_type', get_class($reportable))
-            ->where('reportable_id', $reportable->id)
-            ->exists();
+        abort_if($reportable->user_id === auth()->id(), 422, 'You cannot report your own content.');
 
-        if ($existing) {
-            return back()->with('error', 'You have already reported this content.');
-        }
-
-        Report::create([
+        $report = Report::firstOrCreate([
             'user_id' => auth()->id(),
-            'reportable_type' => get_class($reportable),
+            'reportable_type' => $reportable::class,
             'reportable_id' => $reportable->id,
+        ], [
+            'category' => $validated['category'],
             'reason' => $validated['reason'],
         ]);
+
+        if (! $report->wasRecentlyCreated) {
+            return back()->with('error', 'You have already reported this content.');
+        }
 
         return back()->with('success', 'Report submitted. Our team will review it.');
     }

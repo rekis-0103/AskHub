@@ -66,6 +66,11 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Manage Bad Words</h3>
                 <p class="text-gray-600">Add or remove filtered words</p>
             </a>
+
+            <a href="{{ route('admin.audit.index') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Audit Log</h3>
+                <p class="text-gray-600">Trace moderation and suspension decisions</p>
+            </a>
         </div>
 
         {{-- Recent Reports --}}

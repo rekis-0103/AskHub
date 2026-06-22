@@ -60,6 +60,8 @@
                     </div>
 
                     <div>
+                        <dt class="text-gray-500 mb-1">Category</dt>
+                        <dd class="text-gray-900 capitalize mb-3">{{ $report->category }}</dd>
                         <dt class="text-gray-500 mb-1">Reason</dt>
                         <dd class="text-gray-900 whitespace-pre-line">
                             {{ $report->reason }}
@@ -79,6 +81,9 @@
                         <option value="resolved" @selected($report->status === 'resolved')>Resolved</option>
                     </select>
 
+                    <label class="block text-sm font-medium text-gray-700">Resolution note</label>
+                    <textarea name="resolution_note" rows="3" class="block w-full rounded-md border-gray-300" placeholder="Record why this decision was made">{{ old('resolution_note', $report->resolution_note) }}</textarea>
+
                     @error('status')
                         <p class="text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -94,6 +99,16 @@
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Reported content</h2>
 
                 @if ($report->reportable)
+                    @if($report->reportable->user && !$report->reportable->user->is_admin)
+                        <div class="mb-5 rounded-md border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-sm">Author: <strong>{{ $report->reportable->user->name }}</strong></p>
+                            @if($report->reportable->user->suspended_at)
+                                <form class="mt-3" action="{{ route('admin.users.restore', $report->reportable->user) }}" method="POST">@csrf @method('DELETE')<button class="quiet-button">Restore posting access</button></form>
+                            @else
+                                <form class="mt-3 space-y-2" action="{{ route('admin.users.suspend', $report->reportable->user) }}" method="POST">@csrf<input name="reason" class="w-full rounded-md border-slate-300 text-sm" placeholder="Suspension reason" required><button class="rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white">Suspend author</button></form>
+                            @endif
+                        </div>
+                    @endif
                     @if ($report->reportable_type === 'App\\Models\\Question')
                         <p class="text-sm text-gray-500 mb-2">Question title</p>
                         <p class="text-base font-semibold text-gray-900 mb-4">
@@ -105,7 +120,7 @@
                             {{ $report->reportable->body }}
                         </p>
 
-                        <a href="{{ route('questions.show', $report->reportable_id) }}"
+                        <a href="{{ $report->reportable->public_url }}"
                             class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 mb-4">
                             View on site &rarr;
                         </a>
@@ -116,7 +131,7 @@
                         </p>
 
                         @if ($report->reportable->question_id ?? null)
-                            <a href="{{ route('questions.show', $report->reportable->question_id) }}"
+                            <a href="{{ $report->reportable->question->public_url }}"
                                 class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 mb-4">
                                 View question &rarr;
                             </a>

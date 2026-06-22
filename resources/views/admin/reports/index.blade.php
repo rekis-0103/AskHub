@@ -2,13 +2,19 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-6">All Reports</h1>
 
+        <form method="GET" class="mb-5 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4">
+            <select name="status" class="rounded-md border-slate-300"><option value="">All status</option>@foreach(['pending','reviewed','resolved'] as $status)<option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ ucfirst($status) }}</option>@endforeach</select>
+            <select name="category" class="rounded-md border-slate-300"><option value="">All categories</option>@foreach(['spam','harassment','misinformation','duplicate','other'] as $category)<option value="{{ $category }}" @selected(($filters['category'] ?? '') === $category)>{{ ucfirst($category) }}</option>@endforeach</select>
+            <button class="primary-button">Filter</button><a href="{{ route('admin.reports.index') }}" class="quiet-button">Clear</a>
+        </form>
+
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category / reason</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reported By</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -26,7 +32,7 @@
                                 {{ $report->reportable_type === 'App\Models\Question' ? 'Question' : 'Answer' }}
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-700">
-                                {{ Str::limit($report->reason, 50) }}
+                                <span class="block font-semibold capitalize">{{ $report->category }}</span>{{ Str::limit($report->reason, 50) }}
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-900">
                                 {{ $report->user->name }}

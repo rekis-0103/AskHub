@@ -5,6 +5,7 @@
             <div class="flex items-start justify-between">
                 <div>
                     <h1 class="text-4xl font-bold text-gray-900">{{ $user->name }}</h1>
+                    <p class="mt-1 font-mono text-sm text-gray-500">&#64;{{ $user->username }}</p>
                     @if($user->title)
                         <div class="mt-2 inline-flex items-center px-4 py-2 rounded-lg text-white font-semibold" style="background-color: {{ $user->title->color }}">
                             {{ $user->title->name }}
@@ -82,6 +83,17 @@
                 <div class="text-gray-600">Total Votes</div>
             </div>
         </div>
+
+        @if($user->badges->isNotEmpty())
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Badges</h2>
+                <div class="flex flex-wrap gap-3">
+                    @foreach($user->badges as $badge)
+                        <span title="{{ $badge->description }}" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">{{ $badge->icon }} {{ $badge->name }}</span>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         {{-- Available Titles --}}
         @auth

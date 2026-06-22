@@ -47,6 +47,13 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="username" :value="__('Username')" />
+            <x-text-input id="username" name="username" type="text" class="mt-1 block w-full font-mono" :value="old('username', $user->username)" required autocomplete="username" />
+            <p class="mt-1 text-xs text-gray-500">Used for mentions, for example &#64;{{ $user->username }}.</p>
+            <x-input-error class="mt-2" :messages="$errors->get('username')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

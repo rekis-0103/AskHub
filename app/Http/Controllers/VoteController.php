@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
 use App\Models\Answer;
+use App\Models\Question;
 use App\Models\Vote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VoteController extends Controller
 {
@@ -26,33 +27,41 @@ class VoteController extends Controller
         ]);
 
         $user = auth()->user();
-        
-        $existingVote = Vote::where('user_id', $user->id)
-            ->where('votable_type', get_class($votable))
-            ->where('votable_id', $votable->id)
-            ->first();
+        abort_if($votable->user_id === $user->id, 422, 'You cannot vote on your own content.');
 
-        if ($existingVote) {
-            if ($existingVote->vote == $validated['vote']) {
+        $message = DB::transaction(function () use ($user, $votable, $validated) {
+            $existingVote = Vote::query()
+                ->where('user_id', $user->id)
+                ->where('votable_type', $votable::class)
+                ->where('votable_id', $votable->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingVote?->vote === (int) $validated['vote']) {
                 $existingVote->delete();
-                $votable->decrement('votes', $validated['vote']);
-                return back()->with('success', 'Vote removed!');
+                $message = 'Vote removed!';
+            } elseif ($existingVote) {
+                $existingVote->update(['vote' => $validated['vote']]);
+                $message = 'Vote updated!';
+            } else {
+                Vote::create([
+                    'user_id' => $user->id,
+                    'votable_type' => $votable::class,
+                    'votable_id' => $votable->id,
+                    'vote' => $validated['vote'],
+                ]);
+                $message = 'Vote recorded!';
             }
-            
-            $existingVote->update(['vote' => $validated['vote']]);
-            $votable->increment('votes', $validated['vote'] * 2);
-            return back()->with('success', 'Vote updated!');
-        }
 
-        Vote::create([
-            'user_id' => $user->id,
-            'votable_type' => get_class($votable),
-            'votable_id' => $votable->id,
-            'vote' => $validated['vote'],
-        ]);
+            $total = (int) Vote::query()
+                ->where('votable_type', $votable::class)
+                ->where('votable_id', $votable->id)
+                ->sum('vote');
+            $votable->update(['votes' => $total]);
 
-        $votable->increment('votes', $validated['vote']);
+            return $message;
+        });
 
-        return back()->with('success', 'Vote recorded!');
+        return back()->with('success', $message);
     }
 }

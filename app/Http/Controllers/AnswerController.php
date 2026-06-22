@@ -2,76 +2,79 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
 use App\Models\Answer;
+use App\Models\Question;
+use App\Services\ContentNotificationService;
+use App\Services\GamificationService;
+use App\Services\QuestionWorkflowService;
 use Illuminate\Http\Request;
 
 class AnswerController extends Controller
 {
-    public function store(Request $request, Question $question)
-    {
+    public function store(
+        Request $request,
+        Question $question,
+        GamificationService $gamification,
+        ContentNotificationService $notifications,
+    ) {
+        abort_if($question->status === 'closed', 422, 'This question is closed.');
+
         $validated = $request->validate([
             'body' => 'required|string|min:20',
         ]);
 
-        $question->answers()->create([
+        $answer = $question->answers()->create([
             'user_id' => auth()->id(),
             'body' => $validated['body'],
         ]);
+        $question->update(['last_activity_at' => now()]);
 
-        auth()->user()->addXp(20);
+        $awarded = $gamification->award(auth()->user(), 'answer_created', $answer);
+        $notifications->answerCreated($answer->load(['question.tags', 'user']));
 
-        return back()->with('success', 'Answer posted successfully! +20 XP');
+        return back()->with('success', 'Answer posted successfully!'.($awarded ? ' +20 XP' : ''));
     }
 
     public function edit(Answer $answer)
     {
-        if (auth()->id() !== $answer->user_id && !auth()->user()->is_admin) {
-            abort(403);
-        }
+        $this->authorize('update', $answer);
 
         return view('answers.edit', compact('answer'));
     }
 
     public function update(Request $request, Answer $answer)
     {
-        if (auth()->id() !== $answer->user_id && !auth()->user()->is_admin) {
-            abort(403);
-        }
+        $this->authorize('update', $answer);
 
         $validated = $request->validate([
             'body' => 'required|string|min:20',
         ]);
 
         $answer->update($validated);
+        $answer->question()->update(['last_activity_at' => now()]);
 
-        return redirect()->route('questions.show', $answer->question_id)
+        return redirect($answer->question->public_url)
             ->with('success', 'Answer updated successfully!');
     }
 
     public function destroy(Answer $answer)
     {
-        if (auth()->id() !== $answer->user_id && !auth()->user()->is_admin) {
-            abort(403);
-        }
+        $this->authorize('delete', $answer);
 
-        $questionId = $answer->question_id;
+        $question = $answer->question;
         $answer->delete();
+        $question->update(['last_activity_at' => now()]);
 
-        return redirect()->route('questions.show', $questionId)
+        return redirect($question->public_url)
             ->with('success', 'Answer deleted successfully!');
     }
 
-    public function markAsBest(Answer $answer)
+    public function markAsBest(Answer $answer, QuestionWorkflowService $workflow)
     {
-        $question = $answer->question;
-        
-        if (auth()->id() !== $question->user_id) {
-            abort(403, 'Only question owner can select best answer.');
-        }
+        $changed = $workflow->markBest($answer, auth()->user());
 
-        $answer->markAsBest();
-
-        return back()->with('success', 'Best answer selected! User received +50 XP bonus!');
+        return back()->with('success', $changed
+            ? 'Best answer selected! The author received a one-time +50 XP bonus.'
+            : 'This answer is already selected as best.');
     }
 }

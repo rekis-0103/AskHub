@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Title;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -13,7 +13,8 @@ class ProfileController extends Controller
     public function show(User $user)
     {
         $user->load(['title', 'questions', 'answers']);
-        
+        $user->load('badges');
+
         $stats = [
             'questions_count' => $user->questions()->count(),
             'answers_count' => $user->answers()->count(),
@@ -59,11 +60,21 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore(auth()->id())],
+            'username' => [
+                'sometimes', 'required', 'string', 'min:3', 'max:50', 'regex:/^[A-Za-z0-9_.-]+$/',
+                Rule::unique('users')->ignore(auth()->id()),
+            ],
         ]);
 
-        auth()->user()->update($validated);
+        $user = auth()->user();
+        $emailChanged = isset($validated['email']) && $validated['email'] !== $user->email;
+        $user->fill($validated);
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+        }
+        $user->save();
 
-        return back()->with('success', 'Profile updated successfully!');
+        return redirect()->route('profile.edit')->with('success', 'Profile updated successfully!');
     }
 
     public function destroy(Request $request)

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MarkdownRenderer;
 use Illuminate\Database\Eloquent\Model;
 
 class Answer extends Model
@@ -11,7 +12,7 @@ class Answer extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($answer) {
             $answer->body = BadWord::filter($answer->body);
         });
@@ -47,24 +48,10 @@ class Answer extends Model
         return $this->morphMany(Report::class, 'reportable');
     }
 
-    // Methods
-    public function markAsBest()
+    public function getBodyHtmlAttribute(): string
     {
-        $question = $this->question;
-        
-        // Remove previous best answer
-        if ($question->bestAnswer) {
-            $question->bestAnswer->update(['is_best' => false]);
-        }
-        
-        // Set new best answer
-        $this->is_best = true;
-        $this->save();
-        
-        $question->best_answer_id = $this->id;
-        $question->save();
-        
-        // Award bonus XP
-        $this->user->addXp(50);
+        return app(MarkdownRenderer::class)->render($this->body);
     }
+
+    // Methods
 }

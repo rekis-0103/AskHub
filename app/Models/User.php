@@ -2,22 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
         'xp',
         'level',
         'title_id',
         'is_admin',
+        'suspended_at',
     ];
 
     protected $hidden = [
@@ -31,6 +34,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'suspended_at' => 'datetime',
         ];
     }
 
@@ -60,6 +64,31 @@ class User extends Authenticatable
         return $this->hasMany(Report::class);
     }
 
+    public function bookmarks()
+    {
+        return $this->hasMany(Bookmark::class);
+    }
+
+    public function bookmarkedQuestions()
+    {
+        return $this->belongsToMany(Question::class, 'bookmarks')->withTimestamps();
+    }
+
+    public function follows()
+    {
+        return $this->hasMany(Follow::class);
+    }
+
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class)->withPivot('awarded_at');
+    }
+
+    public function xpTransactions()
+    {
+        return $this->hasMany(XpTransaction::class);
+    }
+
     public function title()
     {
         return $this->belongsTo(Title::class);
@@ -76,7 +105,7 @@ class User extends Authenticatable
     private function checkLevelUp()
     {
         $nextLevel = Level::where('level', $this->level + 1)->first();
-        
+
         if ($nextLevel && $this->xp >= $nextLevel->xp_required) {
             $this->level = $nextLevel->level;
             $this->checkLevelUp(); // Recursive check
@@ -94,5 +123,10 @@ class User extends Authenticatable
             ->where('votable_type', get_class($votable))
             ->where('votable_id', $votable->id)
             ->first();
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
     }
 }

@@ -13,11 +13,13 @@ class DatabaseSeeder extends Seeder
             LevelSeeder::class,
             TitleSeeder::class,
             BadWordSeeder::class,
+            BadgeSeeder::class,
         ]);
 
         // Create Admin User
         User::create([
             'name' => 'Admin',
+            'username' => 'admin',
             'email' => 'admin@askhub.com',
             'password' => bcrypt('password'),
             'is_admin' => true,
@@ -28,6 +30,7 @@ class DatabaseSeeder extends Seeder
         // Create Demo User
         User::create([
             'name' => 'John Doe',
+            'username' => 'john_doe',
             'email' => 'user@askhub.com',
             'password' => bcrypt('password'),
             'is_admin' => false,

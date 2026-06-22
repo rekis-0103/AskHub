@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    [x-cloak] { display: none !important; }
+    :root {
+        --askhub-ink: #172033;
+        --askhub-paper: #f5f7fb;
+        --askhub-blue: #3157d5;
+        --askhub-green: #16805c;
+        --askhub-amber: #c77800;
+        --askhub-line: #dce2ea;
+    }
+
+    body { color: var(--askhub-ink); background: var(--askhub-paper); }
+    :focus-visible { outline: 3px solid #93a9ed; outline-offset: 2px; }
+}
+
+@layer components {
+    .content-prose { @apply text-gray-700 leading-7; }
+    .content-prose p { @apply mb-4; }
+    .content-prose h1 { @apply text-2xl font-bold mt-8 mb-3; }
+    .content-prose h2 { @apply text-xl font-bold mt-7 mb-3; }
+    .content-prose h3 { @apply text-lg font-semibold mt-6 mb-2; }
+    .content-prose ul { @apply list-disc pl-6 mb-4; }
+    .content-prose ol { @apply list-decimal pl-6 mb-4; }
+    .content-prose a { @apply text-blue-700 underline underline-offset-2; }
+    .content-prose blockquote { @apply border-l-4 border-slate-300 pl-4 text-slate-600 italic my-4; }
+    .content-prose code { @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.9em] text-slate-900; }
+    .content-prose pre { @apply overflow-x-auto rounded-lg bg-slate-950 p-4 text-slate-100 mb-4; }
+    .content-prose pre code { @apply bg-transparent p-0 text-inherit; }
+    .tag-chip { @apply inline-flex items-center rounded-md bg-blue-50 px-2 py-1 font-mono text-xs font-medium text-blue-800; }
+    .quiet-button { @apply inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:bg-slate-50; }
+    .primary-button { @apply inline-flex items-center rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800; }
+}
